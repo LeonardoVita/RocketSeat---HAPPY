@@ -1,2 +1,2 @@
-# RocketSeat---HAPPY
+# RocketSeat-HAPPY
 Projeto NextLevelWeek - RocketSeat (HAPPY)
