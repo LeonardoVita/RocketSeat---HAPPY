@@ -59,7 +59,6 @@ export default {
       open_on_weekends,
       images
     }
-
     const schema = Yup.object().shape({
       name: Yup.string().required('Nome obrigatório'),
       latitude: Yup.number().required(),
