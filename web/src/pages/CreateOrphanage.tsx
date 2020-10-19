@@ -1,4 +1,5 @@
-import React, { FormEvent } from "react";
+import React, { ChangeEvent, FormEvent } from "react";
+import { useHistory } from "react-router-dom";
 import { Map, Marker, TileLayer } from 'react-leaflet';
 import { LeafletMouseEvent } from 'leaflet'
 
@@ -7,9 +8,11 @@ import Sidebar from "../components/Sidebar";
 import MapIcon from '../utils/mapicon'
 
 import '../styles/pages/create-orphanage.css';
+import api from "../services/api";
 
 
 export default function CreateOrphanage() {
+  const history = useHistory()
 
   const [position, setPosition] = React.useState({ latitude: 0, longitude: 0 });
 
@@ -18,7 +21,25 @@ export default function CreateOrphanage() {
   const [instructions, setInstructions] = React.useState('')
   const [opening_hours, setOpeningHours] = React.useState('')
   const [open_on_weekends, setOpenOnWeekends] = React.useState(true)
+  const [images, setImages] = React.useState<File[]>([])
+  const [previewImages, setPreviewImages] = React.useState<string[]>([])
 
+  function handleSelectImages(e: ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files)
+      return;
+
+    const selectedImg = Array.from(e.target.files)
+
+    setImages(selectedImg)
+
+    const selectedImgPreview = selectedImg.map(image => {
+      return (
+        URL.createObjectURL(image)
+      )
+    })
+
+    setPreviewImages(selectedImgPreview)
+  }
   function handleMapClick(event: LeafletMouseEvent) {
 
     const { lat, lng } = event.latlng
@@ -29,10 +50,24 @@ export default function CreateOrphanage() {
     })
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
     const { latitude, longitude } = position
+
+    const data = new FormData()
+
+    data.append('name', name)
+    data.append('about', about)
+    data.append('latitude', String(latitude))
+    data.append('longitude', String(longitude))
+    data.append('instructions', instructions)
+    data.append('opening_hours', opening_hours)
+    data.append('open_on_weekends', String(open_on_weekends))
+
+    images.forEach(image => {
+      data.append('images', image)
+    })
 
     console.log({
       position,
@@ -42,10 +77,15 @@ export default function CreateOrphanage() {
       longitude,
       instructions,
       opening_hours,
-      open_on_weekends
+      open_on_weekends,
+      images
     })
-  }
 
+    const res = await api.post('/orphanages', data)
+
+    alert('Cadastro Realizado com sucesso!')
+    history.push('/app')
+  }
 
   return (
     <div id="page-create-orphanage">
@@ -58,7 +98,7 @@ export default function CreateOrphanage() {
             <legend>Dados</legend>
 
             <Map
-              center={[-27.2092052, -49.6401092]}
+              center={[-22.8744843, -43.3004858]}
               style={{ width: '100%', height: 280 }}
               zoom={15}
               onclick={handleMapClick}
@@ -68,7 +108,7 @@ export default function CreateOrphanage() {
               />
 
               {
-                position.latitude != 0 && <Marker interactive={false} icon={MapIcon} position={[position.latitude, position.longitude]} />
+                position.latitude !== 0 && <Marker interactive={false} icon={MapIcon} position={[position.latitude, position.longitude]} />
               }
 
             </Map>
@@ -96,12 +136,19 @@ export default function CreateOrphanage() {
               <label htmlFor="images">Fotos</label>
 
               <div className="images-container">
+                {
+                  previewImages.map(image => {
+                    return (
+                      <img key={image} src={image} alt={name} />
+                    )
+                  })
+                }
                 <label htmlFor="image[]" className="new-image">
                   <FiPlus size={24} color="#15b6d6" />
                 </label>
               </div>
 
-              <input type="file" id="image[]" />
+              <input multiple onChange={e => handleSelectImages(e)} type="file" id="image[]" />
 
             </div>
           </fieldset>
