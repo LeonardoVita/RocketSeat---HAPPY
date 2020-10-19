@@ -5,11 +5,36 @@ import { Map, TileLayer, Marker, Popup } from 'react-leaflet'
 
 import MapIcon from '../utils/mapicon'
 import mapMarkerImg from '../images/map-marker.svg'
+import Api from '../services/api'
 
 import '../styles/pages/orphanages-map.css'
 
 
+interface Orphanage {
+  id: number,
+  latitude: number,
+  longitude: number,
+  name: string
+}
+
+
 export default function OrphanagesMap() {
+
+  const [orphanages, setOrphanages] = React.useState<Orphanage[]>([])
+
+
+  React.useEffect(() => {
+
+    async function fetchData() {
+
+      const { data } = await Api.get('/orphanages')
+      console.log(data)
+      setOrphanages(data)
+    }
+
+    fetchData();
+  }, [])
+
   return (
     <div id="page-map">
       <aside>
@@ -34,18 +59,24 @@ export default function OrphanagesMap() {
           url={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.REACT_APP_MAPBOX_TOKEN}`}
         />
 
-        <Marker
-          position={[-22.8765599, -43.2977000]}
-          icon={MapIcon}
-        >
-          <Popup closeButton={false} minWidth={248} maxWidth={248} className="map-popup">
-            Lar das meninas
-            <Link to="/orphanages/1">
-              <FiArrowRight size={20} color={"#fff"} />
-            </Link>
-          </ Popup>
-        </Marker>
-
+        {
+          orphanages.map((item) => {
+            return (
+              <Marker
+                position={[item.latitude, item.longitude]}
+                icon={MapIcon}
+                key={item.id}
+              >
+                <Popup closeButton={false} minWidth={248} maxWidth={248} className="map-popup">
+                  {item.name}
+                  <Link to={`/orphanages/${item.id}`}>
+                    <FiArrowRight size={20} color={"#fff"} />
+                  </Link>
+                </ Popup>
+              </Marker>
+            )
+          })
+        }
       </Map>
 
       <Link to="/orphanages/create" className="create-orphanage" >
